@@ -1,9 +1,33 @@
 #!/usr/bin/python
- 
+
 from sys import argv
 from io import open
-from networkx import MultiDiGraph, write_dot
- 
+
+# The following code block is not needed,
+# but we want to see which module is used
+# and if and why it fails.
+try:
+    import pygraphviz
+    from networkx.drawing.nx_agraph import write_dot
+    print("Using package pygraphviz")
+except ImportError:
+    try:
+        import pydotplus
+        from networkx.drawing.nx_pydot import write_dot
+        print("Using package pydotplus")
+    except ImportError:
+        print()
+        print("Both pygraphviz and pydotplus were not found ")
+        print("see http://networkx.github.io/documentation"
+              "/latest/reference/drawing.html for info")
+        print()
+        raise
+
+from networkx import MultiDiGraph, draw
+
+#
+# Find cross reference table in linker map file
+#
 def find_cref(inmap):
     while True:
         l = inmap.readline()
@@ -17,7 +41,10 @@ def find_cref(inmap):
         if len(words) == 2:
             if words[0] == 'Symbol' and words[1] == 'File':
                 return True
- 
+
+#
+# Interpret a cross reference table
+#
 def read_cref(inmap):
     modules = MultiDiGraph()
     while True:
@@ -31,11 +58,23 @@ def read_cref(inmap):
         elif len(l) == 0:
             break
     return modules
- 
-inmap = open(argv[1], 'r')
-if find_cref(inmap):
-    modules = read_cref(inmap)
-    write_dot(modules, argv[2])
-else:
-    print 'error: cross reference table not found.'
+
+# when this file is executed
+if __name__ == "__main__":
+    if len(argv) != 3:
+        print "Usage: "+argv[0]+" <linker.map> <output.dot>"
+        exit()
+
+    infile = argv[1]
+    outfile = argv[2]
+
+    print "Reading "+infile+" ..."
+    inmap = open(infile, 'r')
+    if find_cref(inmap):
+        graph = read_cref(inmap)
+        draw(graph)
+        print "Writing "+outfile+" ..."
+        write_dot(graph, outfile)
+    else:
+        print "Error: Cross reference table not found in map file."
 
