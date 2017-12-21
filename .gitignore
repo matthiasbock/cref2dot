@@ -1,0 +1,8 @@
+# Binary
+*.pyc
+
+# Input/Output
+*.dot
+*.ps
+*.pdf
+
